@@ -173,15 +173,43 @@
     }
     updateCountChip();
 
-    // 滚动显示送花人
-    function showTicker(name, flower){
+    // 滚动显示送花人：持续轮播，新送花的优先插播
+    var tickerTimer = null;
+    var queue = [];   // 待插播的消息
+    var rotIdx = 0;
+
+    function displayTicker(text){
       var t = $('ticker');
       var el = document.createElement('div');
       el.className = 'ticker-item';
-      el.textContent = flower + ' ' + name + ' 送出了一朵花';
+      el.textContent = text;
       t.innerHTML = '';
       t.appendChild(el);
-      setTimeout(function(){ if(el.parentNode) el.remove(); }, 3000);
+    }
+
+    function nextTicker(){
+      if (queue.length) {
+        displayTicker(queue.shift());
+        return;
+      }
+      // 轮播：欢迎语 + 历史送花人
+      var recent = state.names.slice(-10);
+      var pool = recent.length
+        ? recent.map(function(n){ return '🌸 ' + n + ' 已送花'; })
+        : ['🌸 欢迎送花致敬'];
+      rotIdx = rotIdx % pool.length;
+      displayTicker(pool[rotIdx]);
+      rotIdx++;
+    }
+
+    nextTicker();
+    tickerTimer = setInterval(nextTicker, 3000);
+
+    function showTicker(name, flower){
+      queue.push(flower + ' ' + name + ' 送出了一朵花');
+      clearInterval(tickerTimer);
+      nextTicker();
+      tickerTimer = setInterval(nextTicker, 3000);
     }
 
     // 送花动作
