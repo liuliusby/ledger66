@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>致敬老员工</title>
+  <style>
+    :root {
+      --cream:#faf3e8; --paper:#fffdf8; --ink:#5c4a38; --ink-2:#8a7360;
+      --muted:#b09579; --line:#eadbcd; --tape:#e8d9c8;
+      --accent:#e07b39; --rose:#e8618c; --rose-soft:#fdeef3;
+      --gold:#d9a441; --safe-b:env(safe-area-inset-bottom,0px);
+    }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    html,body { margin:0; min-height:100%; }
+    body {
+      background:var(--cream); color:var(--ink);
+      font:16px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+      -webkit-tap-highlight-color:transparent;
+      background-image:radial-gradient(circle at 15% 10%, rgba(232,97,140,.06), transparent 40%),
+                        radial-gradient(circle at 85% 30%, rgba(224,123,57,.06), transparent 40%);
+    }
+    .wrap { max-width:560px; margin:0 auto; padding:20px 18px calc(140px + var(--safe-b)); }
+    .card {
+      background:var(--paper); border:2px solid var(--ink); border-radius:22px;
+      padding:26px 22px; margin-bottom:18px;
+      box-shadow:6px 6px 0 rgba(92,74,56,.12);
+    }
+    .tag {
+      display:inline-block; background:var(--ink); color:#fff; font-size:11px; font-weight:700;
+      letter-spacing:.25em; padding:5px 14px 5px 16px; border-radius:20px; margin-bottom:14px;
+    }
+    h1 { margin:0 0 6px; font-size:30px; line-height:1.3; }
+    .sub { color:var(--ink-2); font-size:13px; margin-bottom:18px; }
+    .photo-frame {
+      width:100%; aspect-ratio:4/3; border-radius:16px; border:2px dashed var(--tape);
+      overflow:hidden; background:var(--rose-soft); display:flex; align-items:center; justify-content:center;
+      margin-bottom:18px;
+    }
+    .photo-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo-frame .ph { color:var(--muted); font-size:13px; }
+    .story { font-size:15.5px; line-height:1.9; white-space:pre-wrap; }
+    .story strong { color:var(--accent); }
+    .meta-row { display:flex; gap:10px; margin-bottom:16px; }
+    .meta-chip { flex:1; background:var(--rose-soft); border-radius:12px; padding:10px 8px; text-align:center; }
+    .meta-chip .mv { font-size:19px; font-weight:800; color:var(--rose); }
+    .meta-chip .ml { font-size:11px; color:var(--ink-2); font-weight:600; margin-top:1px; }
+    .footer-note { text-align:center; color:var(--muted); font-size:12px; margin-top:26px; }
+    /* 送花浮层动画 */
+    .fly-flower {
+      position:fixed; bottom:110px; font-size:30px; z-index:60; pointer-events:none;
+      animation:flyup 2.6s ease-out forwards;
+    }
+    @keyframes flyup {
+      0% { opacity:0; transform:translateY(0) scale(.5) rotate(0); }
+      12% { opacity:1; }
+      100% { opacity:0; transform:translateY(-75vh) scale(1.4) rotate(40deg); }
+    }
+    /* 底部操作栏 */
+    #dock {
+      position:fixed; left:0; right:0; bottom:0; z-index:50;
+      padding:12px 16px calc(14px + var(--safe-b));
+      background:rgba(250,243,232,.92); backdrop-filter:blur(10px);
+      border-top:2px solid var(--line);
+    }
+    .dock-inner { max-width:560px; margin:0 auto; display:flex; gap:10px; align-items:center; }
+    #flowerBtn {
+      flex:none; min-height:54px; padding:0 22px; border-radius:18px; border:2px solid var(--ink);
+      background:linear-gradient(135deg,var(--rose),#f0866); background:var(--rose); color:#fff;
+      font-size:18px; font-weight:800; letter-spacing:.1em; cursor:pointer;
+      box-shadow:4px 4px 0 rgba(92,74,56,.18);
+    }
+    #flowerBtn:active { transform:translate(3px,3px); box-shadow:none; }
+    #nameInput {
+      flex:1; min-width:0; min-height:54px; border-radius:18px; border:2px solid var(--ink);
+      background:var(--paper); padding:0 16px; font:inherit; font-weight:600;
+    }
+    /* 送花滚动条 */
+    #ticker {
+      max-width:560px; margin:0 auto 10px; height:34px; overflow:hidden; position:relative;
+      border-radius:12px; background:var(--paper); border:2px solid var(--line);
+    }
+    .ticker-item {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:6px;
+      font-size:13px; font-weight:600; color:var(--ink-2);
+      animation:tickin .5s ease, tickout .5s ease 2.3s forwards;
+    }
+    @keyframes tickin { from { opacity:0; transform:translateY(100%);} to { opacity:1; transform:translateY(0);} }
+    @keyframes tickout { to { opacity:0; transform:translateY(-100%);} }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <span class="tag" id="cTag">致敬</span>
+    <h1 id="cTitle">（标题）</h1>
+    <div class="sub" id="cSub">（副标题）</div>
+    <div class="photo-frame"><span class="ph">🌸 照片位</span></div>
+    <div class="meta-row" id="cMeta"></div>
+    <div class="story" id="cStory">（正文）</div>
+  </div>
+  <div class="footer-note" id="cFooter"></div>
+</div>
+
+<div id="dock">
+  <div class="ticker-wrap">
+    <div id="ticker"><div class="ticker-item" style="animation:none;">🌸 欢迎送花致敬</div></div>
+  </div>
+  <div class="dock-inner">
+    <input type="text" id="nameInput" placeholder="你的名字" maxlength="12">
+    <button id="flowerBtn">🌷 送花</button>
+  </div>
+</div>
+  <script>
+    /* ===== 灵魂配置区：改这里就能换人复用 ===== */
+    var CONFIG = {
+      tag: '致敬老员工',
+      title: '十年坚守，感谢有你',
+      sub: '2026年度 · 员工表彰',
+      photo: '',                // 照片URL或相对路径，留空显示占位
+      photoPlaceholder: '🌸 照片位',
+      metas: [                  // 三个数据位，可自由增删
+        { label: '入职年份', value: '2016' },
+        { label: '坚守岗位', value: '10年' },
+        { label: '累计送花', value: '0朵' },
+      ],
+      story: '十年前你推开了这扇门，\n十年后这扇门因为你的坚守而温暖。\n\n每一份认真都值得被看见，\n每一份坚守都值得被致敬。\n\n这束花，送给你。',
+      footer: '点击下方「送花」，为你致敬的人献上一朵 🌷',
+      flowers: ['🌷','🌹','🌻','🌸','💐','🪻'],   // 送花动画随机用花
+      initialCount: 0,          // 初始花数（写死一个基数）
+    };
+    /* ===== 配置区结束，以下不用动 ===== */
+
+    function $(id){ return document.getElementById(id); }
+
+    // 渲染配置
+    $('cTag').textContent = CONFIG.tag;
+    $('cTitle').textContent = CONFIG.title;
+    $('cSub').textContent = CONFIG.sub;
+    $('cStory').textContent = CONFIG.story;
+    $('cFooter').textContent = CONFIG.footer;
+    if (CONFIG.photo) {
+      var img = document.createElement('img');
+      img.src = CONFIG.photo; img.alt = '';
+      document.querySelector('.photo-frame').innerHTML = '';
+      document.querySelector('.photo-frame').appendChild(img);
+    } else if (CONFIG.photoPlaceholder) {
+      document.querySelector('.photo-frame .ph').textContent = CONFIG.photoPlaceholder;
+    }
+    var metaHtml = '';
+    CONFIG.metas.forEach(function(m){
+      metaHtml += '<div class="meta-chip"><div class="mv">'+m.value+'</div><div class="ml">'+m.label+'</div></div>';
+    });
+    $('cMeta').innerHTML = metaHtml;
+
+    // 送花状态（本地）
+    var KEY = 'tribute-flowers-' + CONFIG.title;
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+    if (!state.count) state.count = CONFIG.initialCount;
+    if (!state.names) state.names = [];
+
+    function saveState(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+    function updateCountChip(){
+      var chip = document.querySelector('.meta-chip .mv');
+      if (CONFIG.metas.length) {
+        var idx = -1;
+        CONFIG.metas.forEach(function(m,i){ if(m.label.indexOf('花')>-1) idx=i; });
+        if (idx>-1) document.querySelectorAll('.meta-chip .mv')[idx].textContent = state.count + '朵';
+      }
+    }
+    updateCountChip();
+
+    // 滚动显示送花人
+    function showTicker(name, flower){
+      var t = $('ticker');
+      var el = document.createElement('div');
+      el.className = 'ticker-item';
+      el.textContent = flower + ' ' + name + ' 送出了一朵花';
+      t.innerHTML = '';
+      t.appendChild(el);
+      setTimeout(function(){ if(el.parentNode) el.remove(); }, 3000);
+    }
+
+    // 送花动作
+    $('flowerBtn').addEventListener('click', function(){
+      var name = $('nameInput').value.trim() || '一位同事';
+      var flower = CONFIG.flowers[Math.floor(Math.random()*CONFIG.flowers.length)];
+      state.count++;
+      state.names.push(name);
+      saveState();
+      updateCountChip();
+      showTicker(name, flower);
+      // 浮花动画
+      for (var i=0; i<3; i++) {
+        (function(i){
+          setTimeout(function(){
+            var f = document.createElement('div');
+            f.className = 'fly-flower';
+            f.textContent = flower;
+            f.style.left = (30 + Math.random()*60) + '%';
+            f.style.animationDelay = (i*0.12) + 's';
+            document.body.appendChild(f);
+            setTimeout(function(){ f.remove(); }, 3000);
+          }, i*150);
+        })(i);
+      }
+      // 名字留在输入框，方便连续送
+      $('nameInput').select();
+    });
+  </script>
+</body>
+</html>
