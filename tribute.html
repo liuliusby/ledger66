@@ -48,16 +48,68 @@
     .meta-chip .mv { font-size:19px; font-weight:800; color:var(--rose); }
     .meta-chip .ml { font-size:11px; color:var(--ink-2); font-weight:600; margin-top:1px; }
     .footer-note { text-align:center; color:var(--muted); font-size:12px; margin-top:26px; }
-    /* 送花浮层动画 */
-    .fly-flower {
-      position:fixed; bottom:110px; font-size:30px; z-index:60; pointer-events:none;
-      animation:flyup 2.6s ease-out forwards;
+    /* 全屏撒花（从上往下） */
+    .rain-flower {
+      position:fixed; top:-8vh; z-index:60; pointer-events:none;
+      font-size:34px; will-change:transform,opacity;
+      animation:falldown linear forwards;
     }
-    @keyframes flyup {
-      0% { opacity:0; transform:translateY(0) scale(.5) rotate(0); }
-      12% { opacity:1; }
-      100% { opacity:0; transform:translateY(-75vh) scale(1.4) rotate(40deg); }
+    @keyframes falldown {
+      0% { opacity:0; transform:translateY(0) rotate(0); }
+      6% { opacity:1; }
+      100% { opacity:.9; transform:translateY(115vh) rotate(300deg); }
     }
+    /* 送花人列表 */
+    .sender-card { padding:16px 16px 8px; }
+    .sender-head {
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:12px; font-weight:800; letter-spacing:.2em; color:var(--ink-2);
+      border-bottom:2px solid var(--rose-soft); padding-bottom:8px; margin-bottom:4px;
+    }
+    .sender-item {
+      display:flex; align-items:center; gap:10px; padding:9px 2px;
+      border-bottom:1px dashed var(--line); font-size:14px;
+    }
+    .sender-item:last-child { border-bottom:none; }
+    .sender-item .sf { font-size:18px; }
+    .sender-item .sn { font-weight:700; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sender-item .st { font-size:11px; color:var(--muted); }
+    .sender-empty { text-align:center; color:var(--muted); font-size:13px; padding:16px 0 20px; }
+    /* 编辑模式 */
+    #editBtn {
+      position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); right:12px; z-index:70;
+      width:38px; height:38px; border-radius:50%; border:2px solid var(--ink);
+      background:var(--paper); font-size:16px; cursor:pointer; line-height:1;
+      box-shadow:3px 3px 0 rgba(92,74,56,.15);
+    }
+    #editMask {
+      position:fixed; inset:0; z-index:80; background:rgba(92,74,56,.35);
+      display:flex; align-items:flex-end; justify-content:center;
+    }
+    #editPanel {
+      width:100%; max-width:560px; max-height:82vh; overflow-y:auto;
+      background:var(--paper); border:2px solid var(--ink); border-bottom:none;
+      border-radius:24px 24px 0 0; padding:20px 18px calc(20px + var(--safe-b));
+    }
+    #editPanel h3 { margin:0 0 14px; font-size:15px; letter-spacing:.15em; }
+    .efield { margin-bottom:12px; }
+    .efield label { display:block; font-size:11px; font-weight:800; color:var(--ink-2); letter-spacing:.1em; margin-bottom:4px; }
+    .efield input[type=text], .efield textarea {
+      width:100%; border:2px solid var(--ink); border-radius:12px; padding:9px 12px;
+      font:inherit; font-size:14px; background:var(--cream);
+    }
+    .efield textarea { min-height:110px; resize:vertical; line-height:1.7; }
+    #photoPick {
+      display:block; width:100%; min-height:48px; border:2px dashed var(--ink-2); border-radius:12px;
+      background:var(--cream); color:var(--ink-2); font:inherit; font-weight:700; cursor:pointer; text-align:center;
+    }
+    .edit-btns { display:flex; gap:10px; margin-top:6px; }
+    .edit-btns button {
+      flex:1; min-height:48px; border-radius:14px; border:2px solid var(--ink);
+      font:inherit; font-size:15px; font-weight:800; cursor:pointer;
+    }
+    #editSave { background:var(--ink); color:#fff; }
+    #editReset { background:var(--paper); color:var(--ink); }
     /* 底部操作栏 */
     #dock {
       position:fixed; left:0; right:0; bottom:0; z-index:50;
@@ -101,7 +153,29 @@
     <div class="meta-row" id="cMeta"></div>
     <div class="story" id="cStory">（正文）</div>
   </div>
+  <div class="card sender-card">
+    <div class="sender-head"><span>🌷 送花名单</span><span id="senderCount"></span></div>
+    <div id="senderList"></div>
+  </div>
   <div class="footer-note" id="cFooter"></div>
+</div>
+
+<button id="editBtn" title="编辑内容">✏️</button>
+<div id="editMask" hidden>
+  <div id="editPanel">
+    <h3>✏️ 编辑内容（换人复用）</h3>
+    <div class="efield"><label>角标</label><input type="text" id="eTag"></div>
+    <div class="efield"><label>标题</label><input type="text" id="eTitle"></div>
+    <div class="efield"><label>副标题</label><input type="text" id="eSub"></div>
+    <div class="efield"><label>照片（直接从手机/电脑选择）</label><button id="photoPick">📷 点击选择照片</button></div>
+    <div class="efield"><label>数据位一（如：入职年份）</label><input type="text" id="eMeta1" placeholder="标签,值"></div>
+    <div class="efield"><label>数据位二（如：坚守岗位）</label><input type="text" id="eMeta2" placeholder="标签,值"></div>
+    <div class="efield"><label>正文（换行用空行）</label><textarea id="eStory"></textarea></div>
+    <div class="edit-btns">
+      <button id="editReset">恢复默认</button>
+      <button id="editSave">保存</button>
+    </div>
+  </div>
 </div>
 
 <div id="dock">
@@ -133,6 +207,12 @@
     };
     /* ===== 配置区结束，以下不用动 ===== */
 
+    var CFG_KEY = 'tribute-config';
+    try {
+      var saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+      for (var k in saved) CONFIG[k] = saved[k];
+    } catch(e) {}
+
     function $(id){ return document.getElementById(id); }
 
     // 渲染配置
@@ -156,11 +236,12 @@
     $('cMeta').innerHTML = metaHtml;
 
     // 送花状态（本地）
-    var KEY = 'tribute-flowers-' + CONFIG.title;
+    var KEY = 'tribute-flowers';
     var state = {};
     try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
     if (!state.count) state.count = CONFIG.initialCount;
-    if (!state.names) state.names = [];
+    if (!state.senders) state.senders = [];   // [{n:名字, t:时间}]
+    state.names = state.senders.map(function(s){ return s.n; });
 
     function saveState(){ localStorage.setItem(KEY, JSON.stringify(state)); }
     function updateCountChip(){
@@ -212,31 +293,112 @@
       tickerTimer = setInterval(nextTicker, 3000);
     }
 
+    // 送花人列表
+    function fmtTime(ts){
+      var d = new Date(ts);
+      return (d.getMonth()+1) + '月' + d.getDate() + '日 ' +
+        String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+    function renderSenders(){
+      var list = $('senderList');
+      $('senderCount').textContent = '共 ' + state.count + ' 朵';
+      if (!state.senders.length) {
+        list.innerHTML = '<div class="sender-empty">还没有人送花，来当第一朵吧 🌷</div>';
+        return;
+      }
+      var html = '';
+      state.senders.slice().reverse().forEach(function(s){
+        html += '<div class="sender-item"><span class="sf">🌷</span><span class="sn">' +
+          s.n.replace(/</g,'&lt;') + '</span><span class="st">' + fmtTime(s.t) + '</span></div>';
+      });
+      list.innerHTML = html;
+    }
+    renderSenders();
+
+    // 全屏撒花特效：从上往下，大面积
+    function rainFlowers(){
+      var n = 36;
+      for (var i=0; i<n; i++) {
+        (function(i){
+          setTimeout(function(){
+            var f = document.createElement('div');
+            f.className = 'rain-flower';
+            f.textContent = CONFIG.flowers[Math.floor(Math.random()*CONFIG.flowers.length)];
+            f.style.left = (Math.random()*100) + '%';
+            f.style.fontSize = (22 + Math.random()*26) + 'px';
+            f.style.animationDuration = (1.8 + Math.random()*1.8) + 's';
+            f.style.animationDelay = (Math.random()*0.3) + 's';
+            document.body.appendChild(f);
+            setTimeout(function(){ f.remove(); }, 4200);
+          }, i*45);
+        })(i);
+      }
+    }
+
     // 送花动作
     $('flowerBtn').addEventListener('click', function(){
       var name = $('nameInput').value.trim() || '一位同事';
       var flower = CONFIG.flowers[Math.floor(Math.random()*CONFIG.flowers.length)];
       state.count++;
+      state.senders.push({ n:name, t:Date.now() });
       state.names.push(name);
       saveState();
       updateCountChip();
+      renderSenders();
       showTicker(name, flower);
-      // 浮花动画
-      for (var i=0; i<3; i++) {
-        (function(i){
-          setTimeout(function(){
-            var f = document.createElement('div');
-            f.className = 'fly-flower';
-            f.textContent = flower;
-            f.style.left = (30 + Math.random()*60) + '%';
-            f.style.animationDelay = (i*0.12) + 's';
-            document.body.appendChild(f);
-            setTimeout(function(){ f.remove(); }, 3000);
-          }, i*150);
-        })(i);
-      }
-      // 名字留在输入框，方便连续送
+      rainFlowers();
       $('nameInput').select();
+    });
+
+    /* ===== 编辑模式：页面内直接改文字、传照片 ===== */
+    var DEFAULTS = JSON.parse(JSON.stringify(CONFIG));
+    $('editBtn').addEventListener('click', function(){
+      $('eTag').value = CONFIG.tag;
+      $('eTitle').value = CONFIG.title;
+      $('eSub').value = CONFIG.sub;
+      $('eStory').value = CONFIG.story;
+      $('eMeta1').value = CONFIG.metas[0] ? CONFIG.metas[0].label + ',' + CONFIG.metas[0].value : '';
+      $('eMeta2').value = CONFIG.metas[1] ? CONFIG.metas[1].label + ',' + CONFIG.metas[1].value : '';
+      $('photoPick').textContent = CONFIG.photo ? '📷 已有照片，点击更换' : '📷 点击选择照片';
+      $('editMask').hidden = false;
+    });
+    $('editMask').addEventListener('click', function(e){
+      if (e.target === this) this.hidden = true;
+    });
+    $('photoPick').addEventListener('click', function(){
+      var inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*';
+      inp.onchange = function(){
+        if (!inp.files[0]) return;
+        var fr = new FileReader();
+        fr.onload = function(){
+          CONFIG.photo = fr.result;
+          $('photoPick').textContent = '✓ 已选好照片，保存后生效';
+        };
+        fr.readAsDataURL(inp.files[0]);
+      };
+      inp.click();
+    });
+    function parseMeta(s, fallback){
+      var p = s.split(',');
+      if (p.length >= 2) return { label:p[0].trim(), value:p.slice(1).join(',').trim() };
+      return fallback;
+    }
+    $('editSave').addEventListener('click', function(){
+      CONFIG.tag = $('eTag').value.trim() || CONFIG.tag;
+      CONFIG.title = $('eTitle').value.trim() || CONFIG.title;
+      CONFIG.sub = $('eSub').value.trim();
+      CONFIG.story = $('eStory').value;
+      if (CONFIG.metas[0]) CONFIG.metas[0] = parseMeta($('eMeta1').value, CONFIG.metas[0]);
+      if (CONFIG.metas[1]) CONFIG.metas[1] = parseMeta($('eMeta2').value, CONFIG.metas[1]);
+      localStorage.setItem(CFG_KEY, JSON.stringify(CONFIG));
+      location.reload();
+    });
+    $('editReset').addEventListener('click', function(){
+      if (confirm('恢复默认文字和照片？送花记录保留。')) {
+        localStorage.removeItem(CFG_KEY);
+        location.reload();
+      }
     });
   </script>
 </body>
